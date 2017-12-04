@@ -1,5 +1,38 @@
-byte VerisonBytes[] = {
-  33, 1, 0
+//####################################################################################################################################
+//####################################################################################################################################
+//####################################################################################################################################
+//
+// EEPROM Programmer - code for an Arduino Nano V3.0 && Arduino Uno (anys Atmega328) - Written by BM Devs (Bouletmarc)
+//
+// This software presents a 115200-8N1 serial port.
+// It is made to Read/Write Data from EEPROM directly with the Arduino!
+// This program is made to read 28pins Chips such as 27c256, 27sf512
+// 
+// For more informations visit : https://www.github.com/bouletmarc/BMBurner/
+//
+//
+//---------------------------------------------------------------------------------------------------------------------------------------------------------
+// COMMANDS :                                                  |   OUTPUTS :                      |   DESC :
+//---------------------------------------------------------------------------------------------------------------------------------------------------------
+// 2 + R + "MMSB" + "MSB" + "LSB" + "CS"                       | "B1" + "B2" + "...B256" + "CS"   |   Reads 256 bytes of data from the EEPROM at address "MSB" + "LSB"  ... Only for 27c256 Chip
+// 5 + R + "MMSB" + "MSB" + "LSB" + "CS"                       | "B1" + "B2" + "...B256" + "CS"   |   Reads 256 bytes of data from the EEPROM at address "MSB" + "LSB"  ... Only for SST Chip
+// 2 + W + "MMSB" + "MSB" + "LSB" + "B1" + "B2" + "..." + "CS" | "O" (0x4F)                       |   Writes 256 bytes of data to the EEPROM at address "MSB" + "LSB", This output 'O' (0x79) for telling 'OK'  ... Only for 27c256 Chip
+// 5 + W + "MMSB" + "MSB" + "LSB" + "B1" + "B2" + "..." + "CS" | "O" (0x4F)                       |   Writes 256 bytes of data to the EEPROM at address "MSB" + "LSB", This output 'O' (0x79) for telling 'OK'  ... Only for SST Chip
+// 5 + E + "CS"                                                | "O" (0x4F)                       |   Erase all the data on the SST Chip
+// V + CS  (V+V)                                               | "V1" + "V2" + "V3"               |   Prints the version bytes of the BMBurner PCB Board for Moates Compatibility (Ex: V5.1.0 = 0x05, 0x01, 0x00)
+// V + F                                                       | "V1" + "V2"                      |   Prints the version bytes of the BMBurner Firmware aka Arduino Project Version (Ex: V1.1 = 0x01, 0x01)
+//
+//**MMSB is always 0, this is only for compatibility with moates softwares on baud 115200, since the 27C256&27SF512 arent more than 64KB (0xFFFF) there are no MMSB**
+//####################################################################################################################################
+//####################################################################################################################################
+//####################################################################################################################################
+
+byte BoardVerisonBytes[] = {
+  5, 1, 0
+};
+
+byte FirmwareVerisonBytes[] = {
+  1, 1
 };
 
 // define the IO lines for the data - bus
@@ -24,8 +57,8 @@ byte VerisonBytes[] = {
 // define the IO lines for the eeprom control
 #define CE     A3
 #define OE     A4
-#define A15     A5
-#define A10     13
+#define A15VPP A5     //A15 on SST, VPP on 27C256
+#define A10    13
 
 // direct access to port
 #define STROBE_PORT PORTC
@@ -38,11 +71,15 @@ byte VerisonBytes[] = {
 
 //a buffer for bytes to burn
 #define BUFFERSIZE 256
-byte buffer[BUFFERSIZE];
+byte buffer[BUFFERSIZE + 1]; // +1 for checksum
 
 //command buffer for parsing commands
-#define COMMANDSIZE 3
-byte cmdbuf[COMMANDSIZE];
+int COMMANDSIZE = 2;    //Commands are set automatically when detecting commands
+byte cmdbuf[262];
+
+#define CHIP27C256 50
+#define CHIP27SF512 53
+unsigned int chipType;
 
 //###############################################################
 //###############################################################
@@ -54,78 +91,98 @@ void setup() {
   pinMode(LATCH, OUTPUT);
   pinMode(CLOCK, OUTPUT);
  
-  //define the boost pins as output
-  // take care that they are LOW
+  //define the boost pins as output (take care that they are LOW)
   digitalWrite(VH, LOW);
   pinMode(VH, OUTPUT);
   digitalWrite(VPP, LOW);
   pinMode(VPP, OUTPUT);
 
-  //define the EEPROM Pins as output
-  // take care that they are HIGH
+  //define the EEPROM Pins as output (take care that they are HIGH)
   digitalWrite(OE, HIGH);
   pinMode(OE, OUTPUT);
   digitalWrite(CE, HIGH);
   pinMode(CE, OUTPUT);
-  digitalWrite(A15, HIGH);
-  pinMode(A15, OUTPUT);
+  digitalWrite(A15VPP, HIGH);
+  pinMode(A15VPP, OUTPUT);
   digitalWrite(A10, HIGH);
   pinMode(A10, OUTPUT);
 
   //set speed of serial connection
   Serial.begin(115200);
-  //Serial.begin(460800);
 }
 
 void loop() {
   readCommand();
-  if (cmdbuf[0] == 'V') Serial.write(VerisonBytes, 3);
-  if (cmdbuf[0] == 'R') Read();
-  if (cmdbuf[0] == 'W') Write();
-  if (cmdbuf[0] == 'E') EraseSST();
+  if (cmdbuf[0] == 'V' && cmdbuf[1] == 'V') Serial.write(BoardVerisonBytes, 3);
+  if (cmdbuf[0] == 'V' && cmdbuf[1] == 'F') Serial.write(FirmwareVerisonBytes, 2);
+  if (cmdbuf[1] == 'R') Read();
+  if (cmdbuf[1] == 'W') Write();
+  if (cmdbuf[0] == '5' && cmdbuf[1] == 'E') EraseSST();
 }
 
-
 //###############################################################
-// Commands functions
+// Serial Bytes functions
 //###############################################################
 
 void readCommand() {
   for(int i=0; i< COMMANDSIZE;i++) cmdbuf[i] = 0;
   int idx = 0;
+  COMMANDSIZE = 2;
   
   do {
     if(Serial.available()) cmdbuf[idx++] = Serial.read();
+    if (cmdbuf[1] == 'R') COMMANDSIZE = 6;
+    if (cmdbuf[1] == 'W') COMMANDSIZE = 262;
+    if (cmdbuf[0] == '5' && cmdbuf[1] == 'E') COMMANDSIZE = 3;
   }
   while (idx < (COMMANDSIZE));
 }
 
+void ChecksumThis() {
+    byte num = 0;
+    for (int i = 0; i < BUFFERSIZE; i++)
+        num = (byte) (num + buffer[i]);
+    buffer[256] = num;
+}
+
+//###############################################################
+// Commands functions
+//###############################################################
+
 void Read() {
-  long addr = ((long) cmdbuf[1] * 256) + (long) cmdbuf[2];
+  //Get Parameters
+  chipType = (int) cmdbuf[0];
+  long addr = ((long) cmdbuf[3] * 256) + (long) cmdbuf[4];
+
+  //Read
   read_start();
   for (int x = 0; x < BUFFERSIZE; ++x) {
     buffer[x] = read_byte(addr+x);
     delayMicroseconds(100);
   }
   read_end();
+
+  //return Array+Checksum to say it passed
+  ChecksumThis();
   Serial.write(buffer, sizeof(buffer));
 }
 
 void Write() {
-  int LoopingIndex = 0;
-  while(LoopingIndex < BUFFERSIZE) {
-    if(Serial.available()) buffer[LoopingIndex++] = Serial.read();
-  }
-  long addr = ((long) cmdbuf[1] * 256) + (long) cmdbuf[2];
+  //Get Parameters
+  chipType = (int) cmdbuf[0];
+  long addr = ((long) cmdbuf[3] * 256) + (long) cmdbuf[4];
+
+  //Write
   write_start();
-  for (int x = 0; x < BUFFERSIZE; ++x) {
-    fast_write(addr + x, buffer[x]);
-  }
+  for (int x = 0; x < BUFFERSIZE; ++x) fast_write(addr + x, cmdbuf[x+5]);
   write_end();
+
+  //return 0x4F (79) to say it passed
   Serial.write(0x4F);
 }
 
 void EraseSST() {
+  chipType = (int) cmdbuf[0];
   set_ce(HIGH);
   set_oe(HIGH);
   set_vh(HIGH);
@@ -134,7 +191,7 @@ void EraseSST() {
   
   //erase pulse
   set_ce(LOW);
-  delay(450);
+  delay(350);
   set_ce(HIGH);
   delayMicroseconds(1);
 
@@ -143,6 +200,7 @@ void EraseSST() {
   set_vpp(LOW);
   delayMicroseconds(1);
   
+  //return 0x4F (79) to say it passed
   Serial.write(0x4F);
 }
 
@@ -156,6 +214,15 @@ void read_start() {
   set_ce(LOW);
   //enable output
   set_oe(LOW);
+
+  //Set VPP to High (27C256)
+  switch (chipType) {
+    case CHIP27C256:
+      digitalWrite(A15VPP, HIGH);
+      break;
+    default:
+      break;
+  }
 }
 
 void read_end() {
@@ -163,6 +230,15 @@ void read_end() {
   set_oe(HIGH);
   //disable chip select
   set_ce(HIGH);
+  
+  //Set VPP to Low (27C256)
+  switch (chipType) {
+    case CHIP27C256:
+      digitalWrite(A15VPP, LOW);
+      break;
+    default:
+      break;
+  }
 }  
 
 inline byte read_byte(unsigned int address)
@@ -189,9 +265,23 @@ inline void fast_write(unsigned int address, byte data)
   write_data_bus(data);
   delayMicroseconds(1);
 
-  //programming pulse
+  //programming pulse start
   set_ce(LOW);
-  delayMicroseconds(20); // for 27SF512
+
+  //programming pulse middle
+  switch (chipType) {
+    //case CHIP27C256:
+      //set_we(LOW);
+      //set_we(HIGH);
+      //break;
+    case CHIP27SF512:
+      delayMicroseconds(20);
+      break;
+    default:
+      break;
+  }
+  
+  //programming pulse end
   set_ce(HIGH);
   delayMicroseconds(1);
 }
@@ -260,7 +350,13 @@ inline void set_address_bus(unsigned int address)
   fastShiftOut(hi);
   fastShiftOut(low);
   digitalWrite(A10, (address & 1024)?HIGH:LOW );
-  digitalWrite(A15, (address & 32768)?HIGH:LOW);
+  switch (chipType) {
+  case CHIP27SF512:
+      digitalWrite(A15VPP, (address & 32768)?HIGH:LOW);
+      break;
+    default:
+      break;
+  }
   
   //strobe latch line
   bitSet(STROBE_PORT,STROBE_LATCH);
@@ -274,8 +370,6 @@ void fastShiftOut(byte data) {
   
   for (int i=7; i>=0; i--)  {
     bitClear(STROBE_PORT,STROBE_CLOCK);
-    
-    //On/Off
     if ( bitRead(data,i) == 1) {
       bitSet(STROBE_PORT,STROBE_DS);
     }
@@ -309,87 +403,26 @@ inline void set_ce (byte state)
   digitalWrite(CE, state);
 }
 
+//Boost VPP 12V
 void set_vpp (byte state)
 {
-  digitalWrite(VPP, state);
+  switch (chipType) {
+  case CHIP27SF512:
+    digitalWrite(VPP, state);
+    break;
+  default:
+    break;
+  }
 }
 
+//Boost Erase 12V
 void set_vh (byte state)
 {
-  digitalWrite(VH, state);
+  switch (chipType) {
+  case CHIP27SF512:
+    digitalWrite(VH, state);
+    break;
+  default:
+    break;
+  }
 }
-
-//###############################################################
-// FAST SWIFT functions (OLD FUNCTION)
-//###############################################################
-
-/*byte read_data_bus()
-{
- //return (PIND >> 2) | ((PINB & 0x3) << 6);
-  
- return ((digitalRead(D7) << 7) |
-    (digitalRead(D6) << 6) |
-    (digitalRead(D5) << 5) |
-    (digitalRead(D4) << 4) |
-    (digitalRead(D3) << 3) |
-    (digitalRead(D2) << 2) |
-    (digitalRead(D1) << 1) |
-    digitalRead(D0));
-}*/
-
-/*inline void write_data_bus(byte data)
-{
-  //2 bits belong to PORTB and have to be set separtely
-  PORTB = (PORTB & 0xF8) | (data >> 6);
-  //bit 0 to 6 belong to bit 2 to 8 of PORTD
-  PORTD = data << 2;
-
-   //2 bits belong to PORTB and have to be set separtely 
-  //digitalWrite(D6, (data >> 6) & 0x01);
-  //digitalWrite(D7, (data >> 7) & 0x01);
-  //bit 0 to 6 belong to bit 2 to 8 of PORTD
-  //PORTD = data << 2;
-}*/
-
-//#define FAST_SHIFT(data) { \
-  /*shift out the top bit of the byte*/ \
-//  if (data & 0x80) \
-//    bitSet(STROBE_PORT,STROBE_DS); \
-//  else \
-//    bitClear(STROBE_PORT,STROBE_DS); \
-  /*shift data left so next bit is ready*/ \
-//  data <<= 1; \
-  /*register shifts bits on upstroke of clock pin*/ \
-//  bitSet(STROBE_PORT,STROBE_CLOCK); \
-//  bitClear(STROBE_PORT,STROBE_CLOCK); \
-//}
-
-/*inline void set_address_bus(unsigned int address)
-{
-  byte hi, low;
-  hi = (address >> 8) & 0x3F;
-  hi |= (address >> 9) & 0x40;
-  
-  //the 27x512 doesn't use WE, instead it's bit A14
-  if (address & 0x4000)
-      bitSet(STROBE_PORT, STROBE_WE);
-  else
-      bitClear(STROBE_PORT, STROBE_WE);
-  //digitalWrite(WE, address & 0x4000 ? HIGH : LOW);
-
-  //get low - byte of 16 bit address
-  low = address & 0xff;
-
-  //shift out highbyte using macro for speed
-  FAST_SHIFT(hi); FAST_SHIFT(hi); FAST_SHIFT(hi); FAST_SHIFT(hi);
-  FAST_SHIFT(hi); FAST_SHIFT(hi); FAST_SHIFT(hi); FAST_SHIFT(hi);
-  //shift out lowbyte
-  FAST_SHIFT(low); FAST_SHIFT(low); FAST_SHIFT(low); FAST_SHIFT(low);
-  FAST_SHIFT(low); FAST_SHIFT(low); FAST_SHIFT(low); FAST_SHIFT(low);
-  
-  //strobe latch line
-  bitSet(STROBE_PORT,STROBE_LATCH);
-  bitClear(STROBE_PORT,STROBE_LATCH);
-
-  delayMicroseconds(1);
-}*/
