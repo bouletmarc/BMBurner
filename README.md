@@ -14,7 +14,7 @@ BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (2
 - Download and Install the [Arduino Software][] if not already done
 1. Download and Open the [Project Files][] of BMBurner
 2. Copy the folder 'Arduino_BMBurn' into 'Documents\Arduino\libraries'
-(exemple : C:\Users\YOUR_USERNAME\Documents\Arduino\libraries\Arduino_BMBurn)
+- (exemple : C:\Users\YOUR_USERNAME\Documents\Arduino\libraries\Arduino_BMBurn)
 3. Open Arduino Software
 4. Load the Project 'Arduino_BMBurn'
 5. Select 'Arduino Nano' in 'Tools/Board'
