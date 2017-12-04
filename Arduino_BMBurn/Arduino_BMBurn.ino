@@ -27,11 +27,11 @@
 //####################################################################################################################################
 //####################################################################################################################################
 
-byte BoardVerisonBytes[] = {
+byte BoardVersionBytes[] = {
   5, 1, 0
 };
 
-byte FirmwareVerisonBytes[] = {
+byte FirmwareVersionBytes[] = {
   1, 1
 };
 
@@ -113,8 +113,8 @@ void setup() {
 
 void loop() {
   readCommand();
-  if (cmdbuf[0] == 'V' && cmdbuf[1] == 'V') Serial.write(BoardVerisonBytes, 3);
-  if (cmdbuf[0] == 'V' && cmdbuf[1] == 'F') Serial.write(FirmwareVerisonBytes, 2);
+  if (cmdbuf[0] == 'V' && cmdbuf[1] == 'V') Serial.write(BoardVersionBytes, 3);
+  if (cmdbuf[0] == 'V' && cmdbuf[1] == 'F') Serial.write(FirmwareVersionBytes, 2);
   if (cmdbuf[1] == 'R') Read();
   if (cmdbuf[1] == 'W') Write();
   if (cmdbuf[0] == '5' && cmdbuf[1] == 'E') EraseSST();
