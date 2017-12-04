@@ -1,7 +1,26 @@
 # BMBurner
-BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (SST 27SF512 Only)
+BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (27C256 and SST 27SF512)
 
-# Download : [HERE][]
+# Downloads Links : [HERE][]
+- [Windows Tool (BMBurner.exe)][] to Read/Write/Verify Chips
+- [Project Files][] to Update BMBurner or to Create your own
+
+# Drivers :
+- Driver for CH340 Chipset (BMBurner) : [CH340 Driver][]
+- Driver for FTDI Chipset (Moates) : [FTDI Driver][]
+
+# How to Update the BMBurner :
+- Download and Install the [CH340 Driver][] if not already done
+- Download and Install the [Arduino Software][] if not already done
+1. Download and Open the [Project Files][] of BMBurner
+2. Copy the folder 'Arduino_BMBurn' into 'Documents\Arduino\libraries'
+(exemple : C:\Users\YOUR_USERNAME\Documents\Arduino\libraries\Arduino_BMBurn)
+3. Open Arduino Software
+4. Load the Project 'Arduino_BMBurn'
+5. Select 'Arduino Nano' in 'Tools/Board'
+6. Select 'Atmega328P' in 'Tools/Processor'
+7. Select the BMBurner Serial Port in 'Tools/Port'
+8. Clic on Upload!
 
 # Requirements :
 - Windows XP|Vista|7|8|10 (.net framework 3.5 installed)
@@ -41,4 +60,9 @@ BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (S
 You can donate to me using [This Link][].
 
 [This Link]: <https://www.paypal.me/bouletmarc>
-[HERE]: <https://github.com/bouletmarc/BMBurner/archive/master.zip>
+[Project Files]: <https://github.com/bouletmarc/BMBurner/archive/master.zip>
+[Windows Tool (BMBurner.exe)]: <https://github.com/bouletmarc/BMBurner/raw/master/BMBurner.exe>
+[Arduino Software]: <https://www.arduino.cc/en/main/software>
+[CH340 Driver]: <https://sparks.gogo.co.nz/assets/_site_/downloads/CH34x_Install_Windows_v3_4.zip>
+[FTDI Driver]: <http://www.ftdichip.com/Drivers/CDM/CDM21228_Setup.zip>
+
