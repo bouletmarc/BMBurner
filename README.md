@@ -5,7 +5,7 @@ BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (S
 
 # Requirements :
 - Windows XP|Vista|7|8|10 (.net framework 3.5 installed)
-- 1x Arduino Nano/Uno (any arduino with atmega328 as microcontroler should work with same pinouts)
+- 1x Arduino Nano/Uno (any arduino with atmega328 as microcontroller should work with same pinouts)
 - 1x 28Pin ZIF Socket
 - 2x 1K Resistors
 - 6x 22K Resistors
@@ -35,17 +35,6 @@ BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (S
 - Edit Reading/Writing Chip addressing
 - Edit Reading/Writing Buffer addressing
 - Much Mores...
-
-
-# Which '.bin' Software can works with this ?
-
-- Crome Tuning
-- BRe
-- eCtune
-- NepTune 'HRTuning'
-- TurboEdit
-- TunerPro
-- Anys others kind of Binary Editor (EEPROM)
 
 # Donations :
 
