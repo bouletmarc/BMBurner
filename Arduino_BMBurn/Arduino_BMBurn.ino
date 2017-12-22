@@ -14,26 +14,33 @@
 //---------------------------------------------------------------------------------------------------------------------------------------------------------
 // COMMANDS :                                                  |   OUTPUTS :                      |   DESC :
 //---------------------------------------------------------------------------------------------------------------------------------------------------------
-// 2 + R + "MMSB" + "MSB" + "LSB" + "CS"                       | "B1" + "B2" + "...B256" + "CS"   |   Reads 256 bytes of data from the EEPROM at address "MSB" + "LSB"  ... Only for 27c256 Chip
-// 5 + R + "MMSB" + "MSB" + "LSB" + "CS"                       | "B1" + "B2" + "...B256" + "CS"   |   Reads 256 bytes of data from the EEPROM at address "MSB" + "LSB"  ... Only for SST Chip
-// 2 + W + "MMSB" + "MSB" + "LSB" + "B1" + "B2" + "..." + "CS" | "O" (0x4F)                       |   Writes 256 bytes of data to the EEPROM at address "MSB" + "LSB", This output 'O' (0x79) for telling 'OK'  ... Only for 27c256 Chip
-// 5 + W + "MMSB" + "MSB" + "LSB" + "B1" + "B2" + "..." + "CS" | "O" (0x4F)                       |   Writes 256 bytes of data to the EEPROM at address "MSB" + "LSB", This output 'O' (0x79) for telling 'OK'  ... Only for SST Chip
-// 5 + E + "CS"                                                | "O" (0x4F)                       |   Erase all the data on the SST Chip
+// 2 + R + "MMSB" + "MSB" + "LSB" + "CS"                       | "B1" + "B2" + "...B256" + "CS"   |   Reads 256 bytes of data from the EEPROM at address "MSB" + "LSB"  ... On Chip Type  2
+// 3 + W + "MMSB" + "MSB" + "LSB" + "B1" + "B2" + "..." + "CS" | "O" (0x4F)                       |   Writes 256 bytes of data to the EEPROM at address "MSB" + "LSB", This output 'O' (0x79) for telling 'OK'  ... On Chip Type 3
+// 5 + E + "CS"                                                | "O" (0x4F)                       |   Erase all the data on Chip Type 5 (SST)
 // V + CS  (V+V)                                               | "V1" + "V2" + "V3"               |   Prints the version bytes of the BMBurner PCB Board for Moates Compatibility (Ex: V5.1.0 = 0x05, 0x01, 0x00)
 // V + F                                                       | "V1" + "V2"                      |   Prints the version bytes of the BMBurner Firmware aka Arduino Project Version (Ex: V1.1 = 0x01, 0x01)
 //
-//**MMSB is always 0, this is only for compatibility with moates softwares on baud 115200, since the 27C256&27SF512 arent more than 64KB (0xFFFF) there are no MMSB**
+//**MMSB is always 0, this is only for compatibility with moates softwares on baud 115200, since the all chips arent more than 64KB (0xFFFF) there are no MMSB**
 //####################################################################################################################################
 //####################################################################################################################################
 //####################################################################################################################################
 
 byte BoardVersionBytes[] = {
-  5, 1, 0
+  5, 1, 0  //Burn2 Version = 5, 15, 70
 };
 
 byte FirmwareVersionBytes[] = {
-  1, 1
+  1, 2
 };
+
+//Define chips predefinied model numbers (2-5 is for moates compatibility, 4 is never ever as it should be used for 27SF040 which is not compatible with this project at all)
+unsigned int chipType;
+#define CHIP27C128    1
+#define CHIP27C256    2   //INCLUDED : 29C256, 27SF256
+#define CHIP27C32     3   //INCLUDED : 2732A
+#define CHIP27SF512   5   //INCLUDED : 27C512, W27E512, W27C512
+#define CHIP28C64     6   //INCLUDED : 27C64
+#define CHIP28C256    7
 
 // define the IO lines for the data - bus
 #define D0 2
@@ -77,9 +84,11 @@ byte buffer[BUFFERSIZE + 1]; // +1 for checksum
 int COMMANDSIZE = 2;    //Commands are set automatically when detecting commands
 byte cmdbuf[262];
 
-#define CHIP27C256 50
-#define CHIP27SF512 53
-unsigned int chipType;
+//flag set if we are on the first write pass
+boolean firstWritePass = true;
+
+//Last Address (used for sending high/low output at only 1 specific location on the 74HC595
+unsigned int Last_Address = 0;
 
 //###############################################################
 //###############################################################
@@ -109,6 +118,8 @@ void setup() {
 
   //set speed of serial connection
   Serial.begin(115200);
+  //Serial.begin(921600); //doesnt works, need 14.7456mhz crystal
+  //Serial.begin(1000000);
 }
 
 void loop() {
@@ -118,6 +129,7 @@ void loop() {
   if (cmdbuf[1] == 'R') Read();
   if (cmdbuf[1] == 'W') Write();
   if (cmdbuf[0] == '5' && cmdbuf[1] == 'E') EraseSST();
+  //if (cmdbuf[0] == 'S' && cmdbuf[1] == 0  && cmdbuf[2] == 'S') Serial.write(0x4F); //moates commands for 921.6k baudrates
 }
 
 //###############################################################
@@ -134,6 +146,7 @@ void readCommand() {
     if (cmdbuf[1] == 'R') COMMANDSIZE = 6;
     if (cmdbuf[1] == 'W') COMMANDSIZE = 262;
     if (cmdbuf[0] == '5' && cmdbuf[1] == 'E') COMMANDSIZE = 3;
+    //if (cmdbuf[0] == 'S' && cmdbuf[1] == 0) COMMANDSIZE = 3;  //moates commands for 921.6k baudrates
   }
   while (idx < (COMMANDSIZE));
 }
@@ -151,9 +164,10 @@ void ChecksumThis() {
 
 void Read() {
   //Get Parameters
-  chipType = (int) cmdbuf[0];
+  chipType = (int) cmdbuf[0] - 48;
   long addr = ((long) cmdbuf[3] * 256) + (long) cmdbuf[4];
-
+  Last_Address = addr;
+  
   //Read
   read_start();
   for (int x = 0; x < BUFFERSIZE; ++x) {
@@ -169,8 +183,9 @@ void Read() {
 
 void Write() {
   //Get Parameters
-  chipType = (int) cmdbuf[0];
+  chipType = (int) cmdbuf[0] - 48;
   long addr = ((long) cmdbuf[3] * 256) + (long) cmdbuf[4];
+  Last_Address = addr;
 
   //Write
   write_start();
@@ -182,7 +197,8 @@ void Write() {
 }
 
 void EraseSST() {
-  chipType = (int) cmdbuf[0];
+  //chipType = (int) cmdbuf[0] - 48;
+  chipType = 5;
   set_ce(HIGH);
   set_oe(HIGH);
   set_vh(HIGH);
@@ -215,13 +231,20 @@ void read_start() {
   //enable output
   set_oe(LOW);
 
-  //Set VPP to High (27C256)
-  switch (chipType) {
-    case CHIP27C256:
-      digitalWrite(A15VPP, HIGH);
-      break;
-    default:
-      break;
+  //Set VPP to Low/High (27C2128, 27C256)
+  if (chipType == CHIP27C128) {
+      digitalWrite(A15VPP, LOW);
+      Set_Output_At(15, HIGH);
+  }
+  else if (chipType == CHIP27C256 || chipType == CHIP28C64) {
+      digitalWrite(A15VPP, HIGH);   //the 28C64 doesnt care but the 27C64 is VPP
+  }
+  else if (chipType == CHIP27C32) {
+      digitalWrite(A15VPP, LOW);  //normally used for A15/VPP, this pin is not used on 24pin chips
+      Set_Output_At(15, LOW);     //normally used for A14, this pin is not used on 24pin chips
+      Set_Output_At(14, HIGH); //**** normally used for A13, this pin is now VCC (5v) ****
+      Set_Output_At(13, LOW);     //normally used for A12, this pin is not used on 24pin chips
+      delayMicroseconds(5);
   }
 }
 
@@ -231,14 +254,9 @@ void read_end() {
   //disable chip select
   set_ce(HIGH);
   
-  //Set VPP to Low (27C256)
-  switch (chipType) {
-    case CHIP27C256:
-      digitalWrite(A15VPP, LOW);
-      break;
-    default:
-      break;
-  }
+  //Set VPP to Low/High (27C2128, 27C256)
+  if (chipType == CHIP27C128) Set_Output_At(15, LOW);
+  else if (chipType == CHIP27C256)  digitalWrite(A15VPP, LOW);
 }  
 
 inline byte read_byte(unsigned int address)
@@ -248,9 +266,13 @@ inline byte read_byte(unsigned int address)
 }
  
 void write_start() {
+  firstWritePass = true;
   //disable output
   set_oe(HIGH);
   set_vpp(HIGH);
+  //Set VPP to low on 29C256 (not 27C256/27SF256 as its read only)
+  if (chipType == CHIP27C256){digitalWrite(A15VPP, LOW); delayMicroseconds(5);}
+  
   data_bus_output();
 }
 
@@ -261,29 +283,60 @@ void write_end() {
 
 inline void fast_write(unsigned int address, byte data)
 {
-  set_address_bus(address);
-  write_data_bus(data);
-  delayMicroseconds(1);
+  if (chipType == CHIP28C64 || chipType == CHIP28C256) {
+    //this function uses /DATA polling to get the end of the page write cycle. This is much faster than waiting 10ms
+    static unsigned int lastAddress = 0;
+    static byte lastData = 0;
+    
+    //enable chip select
+    set_ce(LOW);
 
-  //programming pulse start
-  set_ce(LOW);
+    //data poll
+    if (((lastAddress ^ address) & 0xFFC0 || chipType == CHIP28C64) && !firstWritePass)
+    {
+      unsigned long startTime = millis();
 
-  //programming pulse middle
-  switch (chipType) {
-    //case CHIP27C256:
-      //set_we(LOW);
-      //set_we(HIGH);
-      //break;
-    case CHIP27SF512:
-      delayMicroseconds(20);
-      break;
-    default:
-      break;
+      //poll data until data matches
+      data_bus_input();
+      set_oe(LOW);
+
+      //set timeout here longer than JBurn timeout
+      while(lastData != read_data_bus()) {
+        if (millis() - startTime > 3000) return false;
+      }
+      
+      set_oe(HIGH);
+      delayMicroseconds(1);
+      data_bus_output();
+    }
+
+    //set address and data for write
+    set_address_bus(address);
+    write_data_bus(data);
+    delayMicroseconds(1);
+ 
+    //strobe write
+    set_we(LOW);
+    set_we(HIGH);
+    //disable chip select
+    set_ce(HIGH);
+
+    lastAddress = address;
+    lastData = data;
+    firstWritePass = false;
   }
+  else 
+  {
+    set_address_bus(address);
+    write_data_bus(data);
+    delayMicroseconds(1);
   
-  //programming pulse end
-  set_ce(HIGH);
-  delayMicroseconds(1);
+    //programming pulse
+    set_ce(LOW);
+    delayMicroseconds(100); // for W27E512, works for 27SF512 also (but 27SF512 should be 20ms)
+    set_ce(HIGH);
+    delayMicroseconds(1);
+  }
 }
 
 //###############################################################
@@ -341,23 +394,46 @@ inline void write_data_bus(byte data)
 //###############################################################
 // FAST SWIFT functions
 //###############################################################
-
 inline void set_address_bus(unsigned int address)
 {
   byte hi, low;
   hi = (address >> 8);
   low = address & 0xff;
-  fastShiftOut(hi);
-  fastShiftOut(low);
-  digitalWrite(A10, (address & 1024)?HIGH:LOW );
-  switch (chipType) {
-  case CHIP27SF512:
-      digitalWrite(A15VPP, (address & 32768)?HIGH:LOW);
-      break;
-    default:
-      break;
+  //A14 become WE on 28C64 && 28C256, make sure dont use the output that were generally used for A14
+  if (chipType == CHIP28C64 || chipType == CHIP28C256) bitSet(hi, 6); //set ouput 7 on hi byte
+  else if (chipType == CHIP27C32) {
+    bitClear(hi, 6);  //set ouput 7 on hi byte
+    bitSet(hi, 5);    //set ouput 6 on hi byte, this is now VCC
+    bitClear(hi, 4);  //set ouput 5 on hi byte
   }
   
+  ApplyShiftAt(hi, low);
+  
+  digitalWrite(A10, (address & 1024)?HIGH:LOW );
+  if (chipType == CHIP28C64 || chipType == CHIP28C256) digitalWrite(A15VPP, (address & 16384)?HIGH:LOW);  //A15/VPP become A14 on 28C64 && 28C256
+  else if (chipType == CHIP27SF512) digitalWrite(A15VPP, (address & 32768)?HIGH:LOW);
+}
+
+inline void Set_Output_At(unsigned int Position, bool IsHigh)
+{
+  byte hi, low;
+  hi = (Last_Address >> 8);
+  low = Last_Address & 0xff;
+  if (Position >= 8) {
+    if (IsHigh) bitSet(hi, Position - 8);
+    else  bitClear(hi, Position - 8);
+  }
+  else {
+    if (IsHigh) bitSet(low, Position);
+    else  bitClear(low, Position);
+  }
+  ApplyShiftAt(hi, low);
+}
+
+void ApplyShiftAt(byte hi, byte low)
+{
+  fastShiftOut(hi);
+  fastShiftOut(low);
   //strobe latch line
   bitSet(STROBE_PORT,STROBE_LATCH);
   bitClear(STROBE_PORT,STROBE_LATCH);
@@ -367,15 +443,15 @@ inline void set_address_bus(unsigned int address)
 void fastShiftOut(byte data) {
   //clear
   bitClear(STROBE_PORT,STROBE_DS);
-  
-  for (int i=7; i>=0; i--)  {
+
+  //Loop for the 8x outputs
+  for (int i=7; i>=0; i--) {
+    //clear clock pin
     bitClear(STROBE_PORT,STROBE_CLOCK);
-    if ( bitRead(data,i) == 1) {
-      bitSet(STROBE_PORT,STROBE_DS);
-    }
-    else {      
-      bitClear(STROBE_PORT,STROBE_DS);
-    }
+
+    //Enable/Disable pin Output
+    if (bitRead(data,i) == 1) bitSet(STROBE_PORT,STROBE_DS); 
+    else  bitClear(STROBE_PORT,STROBE_DS);
     
     //register shifts bits on upstroke of clock pin  
     bitSet(STROBE_PORT,STROBE_CLOCK);
@@ -385,6 +461,28 @@ void fastShiftOut(byte data) {
   
   //stop shifting
   bitClear(STROBE_PORT,STROBE_CLOCK);
+}
+
+int GetAddress(unsigned int Position)
+{
+  int Address = 0;
+  if (Position == 1) Address = 1;
+  if (Position == 2) Address = 2;
+  if (Position == 3) Address = 4;
+  if (Position == 4) Address = 8;
+  if (Position == 5) Address = 16;
+  if (Position == 6) Address = 32;
+  if (Position == 7) Address = 64;
+  if (Position == 8) Address = 128;
+  if (Position == 9) Address = 256;
+  if (Position == 10) Address = 512;
+  if (Position == 11) Address = 1024; //This pin is not wired to anything on the BMBurner, refer to pin D13 on arduino instead
+  if (Position == 12) Address = 2048;
+  if (Position == 13) Address = 4096;
+  if (Position == 14) Address = 8192;
+  if (Position == 15) Address = 16384;
+  if (Position == 16) Address = 32768; //This pin is not wired to anything on the BMBurner, refer to pin A5 on arduino instead
+  return Address;
 }
 
 //###############################################################
@@ -401,6 +499,12 @@ inline void set_oe (byte state)
 inline void set_ce (byte state)
 {
   digitalWrite(CE, state);
+}
+
+//**attention, this line is LOW - active**
+inline void set_we (byte state)
+{
+  if (chipType == CHIP28C64 || chipType == CHIP28C256) Set_Output_At(15, state);  //output 15 become WE (since there are 8 outputs by 74HC595, its the #7 ouputs on the 2nd 74HC595)
 }
 
 //Boost VPP 12V
