@@ -22,6 +22,21 @@ BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (2
 7. Select the BMBurner Serial Port in 'Tools/Port'
 8. Clic on Upload!
 
+# Compatible Chips List :
+- 27C32 (Read-Only)
+- 2732A (Read-Only)
+- 27C64 (Read-Only)
+- 27C128 (Read-Only)
+- 27C256 (Read-Only)
+- 27C512 (Read-Only)
+- 27SF256 (Read-Only)
+- 27SF512
+- 28C64
+- 28C256
+- 29C256
+- W27C512
+- W27E512
+
 # BMBurner Windows Tool Functions :
 
 *** Image may differ from the updated tool ***
