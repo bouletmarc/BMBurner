@@ -110,8 +110,6 @@ You can donate to me using [This Link][].
 
 ![alt tag](https://raw.githubusercontent.com/bouletmarc/BMBurner/master/Wiring/BMBurner%20V1.0_LOTS.JPG)
 
-![alt tag](https://raw.githubusercontent.com/bouletmarc/BMBurner/master/Wiring/BMBurner%20V1.0_LOTS.JPG)
-
 [This Link]: <https://www.paypal.me/bouletmarc>
 [Project Files]: <https://github.com/bouletmarc/BMBurner/archive/master.zip>
 [Windows Tool (BMBurner.exe)]: <https://github.com/bouletmarc/BMBurner/raw/master/BMBurner.exe>
