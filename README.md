@@ -1,7 +1,7 @@
 # BMBurner
 BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (27C256 and SST 27SF512)
 
-![alt tag](https://github.com/bouletmarc/BMBurner/blob/master/Wiring/BMBurner V1.1_TOP.JPG)
+![alt tag](https://github.com/bouletmarc/BMBurner/blob/master/Wiring/BMBurner_V1.1_TOP.JPG)
 
 # Downloads Links :
 - [Windows Tool (BMBurner.exe)][] to Read/Write/Verify Chips
