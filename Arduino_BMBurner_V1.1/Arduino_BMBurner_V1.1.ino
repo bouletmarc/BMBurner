@@ -29,6 +29,7 @@ byte BoardVersionBytes[] = {
   5, 15, 70  //Burn2 Version = 5, 15, 70
 };
 
+
 byte FirmwareVersionBytes[] = {
   1, 3
 };
