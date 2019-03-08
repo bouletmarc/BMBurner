@@ -3,6 +3,8 @@ BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (2
 
 ![alt tag](https://raw.githubusercontent.com/bouletmarc/BMBurner/master/Wiring/BMBurner%20V1.1_TOP.JPG)
 
+![alt tag](https://raw.githubusercontent.com/bouletmarc/BMBurner/master/Wiring/BMBurner%20V1.1_BOTTOM.JPG)
+
 # Downloads Links :
 - [Windows Tool (BMBurner.exe)][] to Read/Write/Verify Chips
 - [Project Files][] to Update BMBurner or to Create your own
