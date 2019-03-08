@@ -56,15 +56,16 @@ BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (2
 - Edit Reading/Writing Buffer addressing
 - Much Mores...
 
-# Wiring Diagram V1.0 (if you want to make your own) :
+# if you want to make your own
+# Wiring Diagram V1.0 :
 
 ![alt tag](https://github.com/bouletmarc/BMBurner/blob/master/Wiring/Wiring_Diagram.png)
 
-# Wiring Diagram V1.1 (if you want to make your own) :
+# Wiring Diagram V1.1 :
 
 ![alt tag](https://github.com/bouletmarc/BMBurner/blob/master/Wiring/Wiring_Diagram_V1.1.png)
 
-# Requirements 'ALL VERSIONS' (if you want to make your own) :
+# Requirements 'ALL VERSIONS' :
 
 - Windows XP|Vista|7|8|10 (.net framework 3.5 installed)
 - 1x 28Pin ZIF Socket
@@ -75,12 +76,12 @@ BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (2
 - 2x 2N3906 (or other replacement)
 - 1x Step-Up Converter (usually input 5v and output 12v, it produce 12v out of a 5v signal)
 
-# Requirements 'V1.0' (if you want to make your own) :
+# Requirements 'V1.0' :
 
 - 1x Arduino Nano/Uno (any arduino with atmega328 as microcontroller should work with same pinouts)
 - 3x 0.1uF Capacitors
 
-# Requirements 'V1.1' (if you want to make your own) :
+# Requirements 'V1.1' :
 
 The BMBurner V1.1 require the Arduino Library [MiniCore][] to run on a crystal oscillator of 14.7mHz
 
