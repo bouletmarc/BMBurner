@@ -25,13 +25,15 @@
 //####################################################################################################################################
 //####################################################################################################################################
 
+#include <digitalWriteFast.h>
+
 byte BoardVersionBytes[] = {
   5, 15, 70  //Burn2 Version = 5, 15, 70
 };
 
 
 byte FirmwareVersionBytes[] = {
-  1, 3
+  1, 4
 };
 
 //Define chips predefinied model numbers (2-5 is for moates compatibility, 4 is never ever as it should be used for 27SF040 which is not compatible with this project at all)
@@ -87,21 +89,21 @@ unsigned int Last_Address = 0;
 
 void setup() {
   //define the shiftOut Pins as output
-  pinMode(DS, OUTPUT);
-  pinMode(LATCH, OUTPUT);
-  pinMode(CLOCK, OUTPUT);
+  pinModeFast(DS, OUTPUT);
+  pinModeFast(LATCH, OUTPUT);
+  pinModeFast(CLOCK, OUTPUT);
  
   //define the boost pins as output (take care that they are LOW)
-  pinMode(VH, OUTPUT);
-  pinMode(VPP, OUTPUT);
-  digitalWrite(VH, LOW);
-  digitalWrite(VPP, LOW);
+  pinModeFast(VH, OUTPUT);
+  pinModeFast(VPP, OUTPUT);
+  digitalWriteFast(VH, LOW);
+  digitalWriteFast(VPP, LOW);
 
   //define the EEPROM Pins as output (take care that they are HIGH)
-  pinMode(OE, OUTPUT);
-  pinMode(CE, OUTPUT);
-  digitalWrite(OE, HIGH);
-  digitalWrite(CE, HIGH);
+  pinModeFast(OE, OUTPUT);
+  pinModeFast(CE, OUTPUT);
+  digitalWriteFast(OE, HIGH);
+  digitalWriteFast(CE, HIGH);
 
   //set speed of serial connection
   Serial.begin(921600);
@@ -197,18 +199,18 @@ void EraseSST() {
   set_oe(HIGH);
   set_vh(HIGH);
   set_vpp(HIGH);
-  _delay_ms(1);
+  //_delay_ms(1);
   
   //erase pulse
   set_ce(LOW);
-  _delay_ms(120);
+  _delay_ms(150);
   set_ce(HIGH);
-  _delay_us(1);
+  //_delay_us(1);
 
   //Turning Off
   set_vh(LOW);
   set_vpp(LOW);
-  _delay_us(1);
+  //_delay_us(1);
   
   //return 0x4F (79) to say it passed
   Serial.write(0x4F);
@@ -242,7 +244,7 @@ void read_end() {
 inline byte read_byte(unsigned int address)
 {
   set_address_bus(address);
-  _delay_us(70);
+  //_delay_us(15);
   return read_data_bus();
 }
  
@@ -263,13 +265,13 @@ inline void fast_write(unsigned int address, byte data)
 {
   set_address_bus(address);
   write_data_bus(data);
-  _delay_us(1);
+  //_delay_us(1);
 
   //programming pulse
   set_ce(LOW);
   _delay_us(20); //27SF512 should be 20ms
   set_ce(HIGH);
-  _delay_us(1);
+  //_delay_us(1);
 }
 
 //###############################################################
@@ -277,51 +279,59 @@ inline void fast_write(unsigned int address, byte data)
 //###############################################################
 
 void data_bus_input() {
-  pinMode(D0, INPUT);
-  pinMode(D1, INPUT);
-  pinMode(D2, INPUT);
-  pinMode(D3, INPUT);
-  pinMode(D4, INPUT);
-  pinMode(D5, INPUT);
-  pinMode(D6, INPUT);
-  pinMode(D7, INPUT);
+  pinModeFast(D0, INPUT);
+  pinModeFast(D1, INPUT);
+  pinModeFast(D2, INPUT);
+  pinModeFast(D3, INPUT);
+  pinModeFast(D4, INPUT);
+  pinModeFast(D5, INPUT);
+  pinModeFast(D6, INPUT);
+  pinModeFast(D7, INPUT);
 }
 
 void data_bus_output() {
-  pinMode(D0, OUTPUT);
-  pinMode(D1, OUTPUT);
-  pinMode(D2, OUTPUT);
-  pinMode(D3, OUTPUT);
-  pinMode(D4, OUTPUT);
-  pinMode(D5, OUTPUT);
-  pinMode(D6, OUTPUT);
-  pinMode(D7, OUTPUT);
+  pinModeFast(D0, OUTPUT);
+  pinModeFast(D1, OUTPUT);
+  pinModeFast(D2, OUTPUT);
+  pinModeFast(D3, OUTPUT);
+  pinModeFast(D4, OUTPUT);
+  pinModeFast(D5, OUTPUT);
+  pinModeFast(D6, OUTPUT);
+  pinModeFast(D7, OUTPUT);
 }
 
 byte read_data_bus()
 {
  byte b = 0;
-  if (digitalRead(D0) == HIGH) b |= 1;
-  if (digitalRead(D1) == HIGH) b |= 2;
-  if (digitalRead(D2) == HIGH) b |= 4;
-  if (digitalRead(D3) == HIGH) b |= 8;
-  if (digitalRead(D4) == HIGH) b |= 16;
-  if (digitalRead(D5) == HIGH) b |= 32;
-  if (digitalRead(D6) == HIGH) b |= 64;
-  if (digitalRead(D7) == HIGH) b |= 128;
+  if (digitalReadFast(D0) == HIGH) b |= 1;
+  if (digitalReadFast(D1) == HIGH) b |= 2;
+  if (digitalReadFast(D2) == HIGH) b |= 4;
+  if (digitalReadFast(D3) == HIGH) b |= 8;
+  if (digitalReadFast(D4) == HIGH) b |= 16;
+  if (digitalReadFast(D5) == HIGH) b |= 32;
+  if (digitalReadFast(D6) == HIGH) b |= 64;
+  if (digitalReadFast(D7) == HIGH) b |= 128;
   return(b);
 }
 
 inline void write_data_bus(byte data)
 {
-  digitalWrite(D0, data & 1);
-  digitalWrite(D1, data & 2);
-  digitalWrite(D2, data & 4);
-  digitalWrite(D3, data & 8);
-  digitalWrite(D4, data & 16);
-  digitalWrite(D5, data & 32);
-  digitalWrite(D6, data & 64);
-  digitalWrite(D7, data & 128);
+  if (bitRead(data, 0)) {digitalWriteFast(D0, HIGH);}
+  else {digitalWriteFast(D0, LOW);}
+  if (bitRead(data, 1)) {digitalWriteFast(D1, HIGH);}
+  else {digitalWriteFast(D1, LOW);}
+  if (bitRead(data, 2)) {digitalWriteFast(D2, HIGH);}
+  else {digitalWriteFast(D2, LOW);}
+  if (bitRead(data, 3)) {digitalWriteFast(D3, HIGH);}
+  else {digitalWriteFast(D3, LOW);}
+  if (bitRead(data, 4)) {digitalWriteFast(D4, HIGH);}
+  else {digitalWriteFast(D4, LOW);}
+  if (bitRead(data, 5)) {digitalWriteFast(D5, HIGH);}
+  else {digitalWriteFast(D5, LOW);}
+  if (bitRead(data, 6)) {digitalWriteFast(D6, HIGH);}
+  else {digitalWriteFast(D6, LOW);}
+  if (bitRead(data, 7)) {digitalWriteFast(D7, HIGH);}
+  else {digitalWriteFast(D7, LOW);}
 }
 
 //###############################################################
@@ -359,8 +369,8 @@ void ApplyShiftAt(byte hi, byte low)
   
   //strobe latch line
   bitSet(STROBE_PORT,STROBE_LATCH);
-  bitClear(STROBE_PORT,STROBE_LATCH);
   _delay_us(1);
+  bitClear(STROBE_PORT,STROBE_LATCH);
 }
 
 void fastShiftOut(byte data) {
@@ -415,13 +425,13 @@ int GetAddress(unsigned int Position)
 //**attention, this line is LOW - active**
 inline void set_oe (byte state)
 {
-  digitalWrite(OE, state);
+  digitalWriteFast(OE, state);
 }
  
 //**attention, this line is LOW - active**
 inline void set_ce (byte state)
 {
-  digitalWrite(CE, state);
+  digitalWriteFast(CE, state);
 }
 
 //Boost VPP 12V
@@ -429,7 +439,8 @@ void set_vpp (byte state)
 {
   switch (chipType) {
   case CHIP27SF512:
-    digitalWrite(VPP, state);
+    if (state == HIGH) {digitalWriteFast(VPP, HIGH);}
+    else {digitalWriteFast(VPP, LOW);}
     break;
   default:
     break;
@@ -441,7 +452,8 @@ void set_vh (byte state)
 {
   switch (chipType) {
   case CHIP27SF512:
-    digitalWrite(VH, state);
+    if (state == HIGH) {digitalWriteFast(VH, HIGH);}
+    else {digitalWriteFast(VH, LOW);}
     break;
   default:
     break;
