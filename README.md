@@ -52,6 +52,20 @@ BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (2
 - Edit Reading/Writing Buffer addressing
 - Much Mores...
 
+# Serial Protocol Functions :
+
+| Command | Receice Buffer | Description
+| --- | --- | --- |
+| 'C' + R + 'S' + "MSB" + "LSB" + "CS"| "B1" + "B2" + "...BX" + "CS" | Reads 'S' bytes(S=Size, S=0 for 256bytes) from the EEPROM at address "MSB" + "LSB" (C=Chip, C=2 for 27C256, etc, C=5 for 27SF512 SST, etc) |
+| 'C' + W + 'S' + "MSB" + "LSB" + "B1" + "B2" + "..." + "CS" | "O" (0x4F) | Writes 'S' bytes(S=Size, S=0 for 256bytes) from the EEPROM at address "MSB" + "LSB" (C=Chip, C=2 for 27C256, etc, C=5 for 27SF512 SST, etc) |
+| 5 + E + "CS" | "O" (0x4F) | Erase all the data on Chip Type 5 (SST) |
+| V + CS (V+V) | "B1" + "B2" + "B3" | Prints the version bytes of the BMBurner PCB Board for Moates Compatibility(Ex:V5.1.0) |
+| F + CS (F+F) | "B1" + "B2" | Prints the firmware bytes of the BMBurner PCB Board(Ex:V2.0) |
+| G + CS (G+G) | "B1" + "B2" | Prints the BMBurner Starting baudrate (Ex:'B1=1,baud 921.6k', 'B1=2,baud 9600', 'B1=3,baud 115200') |
+| S + 0 + S | "O" (0x4F) | Switch the internal baudrate on the BMBurner to 921600 for Moates Compatibility |
+| S + 7 + S | "O" (0x4F) | Switch the internal baudrate on the BMBurner to 115600 for Moates Compatibility |
+| A + 'N' | "O" (0x4F) | Change the chip AccessTime to 'N'ns (Ex:N=70 for 70ns AccessTime) |
+
 # Donations :
 
 You can donate to me using [This Link][].
