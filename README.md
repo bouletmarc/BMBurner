@@ -60,11 +60,7 @@ You can donate to me using [This Link][].
 
 ![alt tag](https://raw.githubusercontent.com/bouletmarc/BMBurner/master/Wiring/BMBurner%20V1.1_LOTS.JPG)
 
-![alt tag](https://raw.githubusercontent.com/bouletmarc/BMBurner/master/Wiring/FTDI_TO_CN2.JPG)
-
 # Pictures BMBurner V1.0 :
-
-![alt tag](https://raw.githubusercontent.com/bouletmarc/BMBurner/master/Wiring/BMBurner%20V1.0_TOP.JPG)
 
 ![alt tag](https://raw.githubusercontent.com/bouletmarc/BMBurner/master/Wiring/BMBurner%20V1.0_LOTS.JPG)
 
