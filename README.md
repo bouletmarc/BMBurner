@@ -25,7 +25,7 @@ BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (2
 # Compatible Chips List (for BMBurner V2.X):
 - 27C256 (Read-Only)
 - 27C512 (Read-Only)
-- 27SF256 (Read-Only)
+- 27SF256
 - 27SF512
 - 27SF512 (Fake with 70ns access/write time)
 - 29C256
@@ -59,6 +59,7 @@ BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (2
 | 'C'+R+'S'+'MSB'+'LSB'+'CS'| "B1"+"B2"+"...BX"+"CS" | Reads 'S' bytes(S=Size, S=0 for 256bytes) from the EEPROM at address 'MSB'+'LSB' (C=Chip, C=2 for 27C256, C=5 for 27SF512 SST) |
 | 'C'+W+'S'+'MSB'+'LSB'+'B1'+'B2'+'...BX'+'CS'|"O"(0x4F) | Writes 'S' bytes(S=Size, S=0 for 256bytes) from the EEPROM at address 'MSB'+'LSB' (C=Chip, C=2 for 27C256, C=5 for 27SF512 SST) |
 | 5+E+'CS' | "O"(0x4F) | Erase all the data on Chip Type 5 (SST) |
+| 6+E+'CS' | "O"(0x4F) | Erase all the data on Chip Type 6 (SST 256) |
 | V+'CS' (V+V) | "B1"+"B2" + "B3" | Prints the version bytes of the BMBurner PCB Board for Moates Compatibility(Ex:V5.1.0) |
 | F+'CS' (F+F) | "B1"+"B2" | Prints the firmware bytes of the BMBurner PCB Board(Ex:V2.0) |
 | G+'CS' (G+G) | "B1"+"B2" | Prints the BMBurner Starting baudrate (Ex:'B1=1,baud 921.6k', 'B1=2,baud 9600', 'B1=3,baud 115200') |
@@ -71,7 +72,7 @@ BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (2
 | 'N' | 'N' equal the AccessTime in ns (Ex:N=70 for 70ns AccessTime) |
 | 'MSB' | 'MSB' equal to the Most Signifiant Byte for the EEPROM Address location |
 | 'LSB' | 'LSB' equal to the Least Signifiant Byte for the EEPROM Address location |
-| 'C' | 'C' equel the Chip Type (C=2 for 27C256, C=5 for 27SF512 SST, etc..) |
+| 'C' | 'C' equel the Chip Type (C=2 for 27C256, C=5 for 27SF512 SST, C=6 for 27SF256 SST, etc..) |
 | 'S' | 'S' equal the Size/Amount of bytes to proceed (S=0 is for 256bytes else S equal the amount of byte, S=1 for 1byte) |
 | 'CS' | 'CS' equal to the checksum of the Commands we are sending in 1Byte form |
 | ... | Any Command that isn't within 'Brackets' are the actual Char/String to send (ex: V is for sending the Char V |
