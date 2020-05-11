@@ -8,7 +8,7 @@ BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (2
 - [Firmware Updating Tool][] to Update the BMBurner Firmware
 
 # Downloads Drivers Links :
-- Driver for FTDI Chipset (BMBurner V1.1 and Moates) : [FTDI Driver][]
+- Driver for FTDI Chipset (BMBurner V1.1, V2.4 and Up, and Moates devices) : [FTDI Driver][]
 - Driver for CH340 Chipset (BMBurner V1.0, BMBurner V2.X) : [CH340 Driver][]
 
 # How to Update the BMBurner Firmware (V2.X ONLY):
@@ -21,12 +21,12 @@ BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (2
 # Compatible Chips List (for BMBurner V2.X):
 - 27C256 (Read-Only)
 - 27C512 (Read-Only)
-- 27SF256
+- 27SF256 (can only be burn with v2.4 and Up)
 - 27SF512
 - 27SF512 (Fake with 70ns access/write time)
 - 29C256
-- W27C512
-- W27E512
+- W27C512 (can only be burn with v2.0 and Up)
+- W27E512 (can only be burn with v2.0 and Up)
 - DS1230
 - 61256/61C256
 - 62256/62C256
