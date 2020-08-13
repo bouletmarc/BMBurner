@@ -18,7 +18,7 @@ BMBurner is a Arduino based EPROM Programmer that can Read/Write/Verify Chips (2
 3. Clic on 'Connect Device' button to connect to your BMBurner
 4. Clic on the 'Update Firmware' button!
 
-**If you have a BMBurner v2.5 or above, you must 'jump' the jumper nearby the ft232rl chipset with a paperclip by exemple and at the same time than you are clicking on the 'Update Firmware' button otherwise the firmware won't install in the BMBurner**
+**If you have a BMBurner v2.5 or above, you must 'jump' the jumper nearby the Power Switch with a paperclip (by exemple) and at the same time than you are clicking on the 'Update Firmware' button otherwise the firmware won't install in the BMBurner**
 
 # Compatible Chips List (for BMBurner V2.X):
 - 27C256 (Read-Only)
